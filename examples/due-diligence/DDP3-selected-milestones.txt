@@ -1,0 +1,8 @@
+ProfileCreated
+Drafted
+Verified
+Refinement achieved
+Confirmed
+Validated
+Approved
+Activated
