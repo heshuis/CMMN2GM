@@ -1,0 +1,10 @@
+In depth analysis performed
+Extended fix successful
+Quick fix successful
+Remote fix successful
+SWO created
+Service parts available
+Repair successful
+Problem solved
+Completed TSD
+Corrective maintenance performed
