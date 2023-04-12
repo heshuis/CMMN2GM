@@ -7,6 +7,6 @@ CMMN2GM requires
 - JDOM library: jdom-1.1.3.jar
 - Graphviz.Java (https://github.com/jabbalaci/graphviz-java-api/blob/master/src/main/java/com/github/jabbalaci/graphviz/GraphViz.java)
 
-Usage: java -jar nl.tue.ieis.is.CMMN.CMMN2GM <file.cmmn> <goal-milestone-correspondence.txt>, where <file.CMMN> is a CMMN file and <goal-milestone-correspondence.txt> is a textfile in which each line contains a milestone that corresponds to a goal.
+Usage: java -jar CMMN2GM.jar <file.cmmn> <goal-milestone-correspondence.txt>, where <file.CMMN> is a CMMN file and <goal-milestone-correspondence.txt> is a textfile in which each line contains a milestone that corresponds to a goal.
 
 Folder 'examples' contains sample CMMN and correspondence files.
