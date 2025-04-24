@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 //
 import org.jdom.Document;
@@ -474,15 +476,23 @@ public class CaseSchema {
 	
 	
 	public void printStatistics(){
-		System.out.println("Case schema: " + this.getName());
-		System.out.println("There are " + this.planitemdefs.size() + "  plan item definitions." );
-		System.out.println("                   " + this.countStages() + "  stages." );
-		System.out.println("                   " + this.countTasks() + "  tasks." );
-		System.out.println("                   " + this.countMilestones() + "  milestones." );
-		System.out.println("                   " + this.countEventListeners() + "  event listeners." );
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(name+"-cm-stats.txt", false))) {
+	    	writer.write("Case schema: " + this.getName()+"\n");
+	    	writer.write("There are " + this.planitemdefs.size() + "  plan item definitions.\n" );
+	    	writer.write("                   " + this.countStages() + "  stages.\n" );
+	    	writer.write("                   " + this.countTasks() + "  tasks.\n" );
+	    	writer.write("                   " + this.countMilestones() + "  milestones.\n" );
+	    	writer.write("                   " + this.countEventListeners() + "  event listeners.\n" );
+			writer.write("There are " + this.sentries.size() + "  sentries.\n" );
+			writer.write("Rik");
+			writer.close();
+
+	    }
+	    catch (Exception e) {
+	        e.getStackTrace();
+	      }
 
 
-		System.out.println("There are " + this.sentries.size() + "  sentries." );
 	}
 
 	

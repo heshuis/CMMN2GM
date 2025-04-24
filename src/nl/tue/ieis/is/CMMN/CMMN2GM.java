@@ -78,11 +78,14 @@ public class CMMN2GM {
 		gn.inferDependencies();
 		gn.restrict(selected_goals);
 		gn.analyzeInconsistencies();
+		gn.preserveOriginalGoalRelations();
+		gn.printGraph();
 		GoalModel gm=gn.computeGoalMode(selected_milestones);
 		gm.analyzeInconsistencies();
 		gm.printGraph();
 		cs.printStatistics();
 		gm.printMetrics();
+		gm.printAnalysisGoalRelations(gn,selected_goals);
 	}
 	
 	public static void main(String args[]){
