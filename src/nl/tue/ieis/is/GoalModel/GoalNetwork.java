@@ -1,9 +1,12 @@
 package nl.tue.ieis.is.GoalModel;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
+
+import com.github.jabbalaci.graphviz.GraphViz;
 
 import nl.tue.ieis.is.CMMN.PlanItem;
 
@@ -11,6 +14,8 @@ public class GoalNetwork {
 	
 	private Vector<Goal> goals;
 	private Set<GoalRelation> grs;
+	private Set<GoalRelation> grs_orig;
+
 	private Set<GoalRelation> intransitive;
 	private String name;
 	
@@ -78,12 +83,12 @@ public class GoalNetwork {
 							supports.add(sr);
 							changed=true;
 						}
-						if ((gr1.isComplements()||gr1.isExcludes())&&gr2.isSupports() && (!this.isRelated(gr1.getFirstGoal(), gr2.getSecondGoal()))) {
-							SupportsRelation sr=new SupportsRelation(gr1.getFirstGoal(),gr2.getSecondGoal(),"inferred supports");
-							sr.setInferred();
-							supports.add(sr);
-							changed=true;
-						}
+//						if ((gr1.isComplements()||gr1.isExcludes())&&gr2.isSupports() && (!this.isRelated(gr1.getFirstGoal(), gr2.getSecondGoal()))) {
+//							SupportsRelation sr=new SupportsRelation(gr1.getFirstGoal(),gr2.getSecondGoal(),"inferred supports");
+//							sr.setInferred();
+//							supports.add(sr);
+//							changed=true;
+//						}
 					}					
 				}
 			}
@@ -211,6 +216,15 @@ public class GoalNetwork {
 		return false;
 	}
 	
+	public boolean isSupportsOriginal(Goal g1, Goal g2) {
+		for (GoalRelation gr:grs_orig) {
+			if (gr.covers(g1, g2) && gr.isSupports()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public boolean isComplements(Goal g1, Goal g2) {
 		for (GoalRelation gr:grs) {
 			if (gr.covers(g1, g2) && gr.isComplements()) {
@@ -220,8 +234,26 @@ public class GoalNetwork {
 		return false;
 	}
 	
+	public boolean isComplementsOriginal(Goal g1, Goal g2) {
+		for (GoalRelation gr:grs_orig) {
+			if (gr.covers(g1, g2) && gr.isComplements()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public boolean isExcludes(Goal g1, Goal g2) {
 		for (GoalRelation gr:grs) {
+			if (gr.covers(g1, g2) && gr.isExcludes()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public boolean isExcludesOriginal(Goal g1, Goal g2) {
+		for (GoalRelation gr:grs_orig) {
 			if (gr.covers(g1, g2) && gr.isExcludes()) {
 				return true;
 			}
@@ -270,6 +302,38 @@ public class GoalNetwork {
 		}
 	}
 	
+	
+	public void setSupportsOriginal(Goal g1, Goal g2) {
+		SupportsRelation gr_new=new SupportsRelation(g1,g2,"original");
+		grs_orig.add(gr_new);
+	}
+	
+	public void setComplementsOriginal(Goal g1, Goal g2) {
+		ComplementsRelation gr_new=new ComplementsRelation(g1,g2,"original",false);
+		grs_orig.add(gr_new);
+	}
+	
+	public void setExcludesOriginal(Goal g1, Goal g2) {
+		ExcludesRelation gr_new=new ExcludesRelation(g1,g2,"original");
+		grs_orig.add(gr_new);
+	}
+	
+	public void preserveOriginalGoalRelations() {
+		grs_orig=new HashSet<GoalRelation>();
+		for (GoalRelation gr: grs){
+			if (gr.isSupports()) {
+				setSupportsOriginal(gr.getFirstGoal(),gr.getSecondGoal());
+			}
+			if (gr.isComplements()) {
+				setComplementsOriginal(gr.getFirstGoal(),gr.getSecondGoal());
+			}
+			if (gr.isExcludes()) {
+				setExcludesOriginal(gr.getFirstGoal(),gr.getSecondGoal());
+			}
+		}
+	}
+	
+	
 	public GoalModel process(GoalModel gm, GoalNode gn,Set<GoalRelation> grs) {
 		Goal g=gn.getGoal();
 		Set<GoalNode> children=gn.getChildren();
@@ -285,7 +349,6 @@ public class GoalNetwork {
 		
 			// process AND clique
 			Set<Goal> clique=this.findMaxNeighbourCluster(true, c, childgoals);
-//			if (clique.size()>1 || clique.size()==children.size()) {
 			if (clique.size()>1 ) {
 				processed.addAll(clique);
 				if (!clique.containsAll(childgoals)) {
@@ -380,6 +443,7 @@ public class GoalNetwork {
 		for (GoalNode gn:order) {
 			gm=this.process(gm, gn, grs);
 		}
+//		gm.fixCompositeTypes(this);
 		return gm;
 	}
 	
@@ -441,7 +505,59 @@ public class GoalNetwork {
 	}
 	
 
+	public void printGraphReduced() {
+		GraphViz gv = new GraphViz();
+		gv.addln(gv.start_graph());
+//		gv.addln("edge[arrowhead=none]");
+		for (GoalRelation gr: grs) {
+			Goal g1=gr.getFirstGoal();
+			Goal g2=gr.getSecondGoal();
+			if (gr.isSupports()){
+				gv.addln("\""+g1.getName()+"\" -> \"" + g2.getName()+"\";");
+			}
+			if (gr.isComplements()){
+				gv.addln("\""+g1.getName() + "\" -> \"" + g2.getName()+"\"[dir=none;label=\"&\"];");
+			}
+			if (gr.isExcludes()){
+				gv.addln("\""+g1.getName() + "\" -> \"" + g2.getName()+"\"[dir=none;label=\"x\"];");
+			}
+		}
+		gv.addln(gv.end_graph());
+		gv.increaseDpi();   // 106 dpi
+
+
+		String type = "png";	
+		String repesentationType= "dot";
+		File out = new File(name+"goal-relations."+ type);   // Linux
+		gv.writeGraphToFile( gv.getGraph(gv.getDotSource(), type, repesentationType), out );
+	}
 	
+	public void printGraph() {
+		GraphViz gv = new GraphViz();
+		gv.addln(gv.start_graph());
+//		gv.addln("edge[arrowhead=none]");
+		for (GoalRelation gr: grs_orig) {
+			Goal g1=gr.getFirstGoal();
+			Goal g2=gr.getSecondGoal();
+			if (gr.isSupports()){
+				gv.addln("\""+g1.getName()+"\" -> \"" + g2.getName()+"\";");
+			}
+			if (gr.isComplements()){
+				gv.addln("\""+g1.getName() + "\" -> \"" + g2.getName()+"\"[dir=none;label=\"&\"];");
+			}
+			if (gr.isExcludes()){
+				gv.addln("\""+g1.getName() + "\" -> \"" + g2.getName()+"\"[dir=none;label=\"x\"];");
+			}
+		}
+		gv.addln(gv.end_graph());
+		gv.increaseDpi();   // 106 dpi
+
+
+		String type = "png";	
+		String repesentationType= "dot";
+		File out = new File(name+"goal-relations."+ type);   // Linux
+		gv.writeGraphToFile( gv.getGraph(gv.getDotSource(), type, repesentationType), out );
+	}
 	
 	
 	public void print() {

@@ -13,6 +13,7 @@ public class GoalNode {
 	private boolean ANDtype;
 	private boolean ORtype;	
 	private String id;
+	private int depth;
 	
 	public GoalNode(Goal g, int i) {
 		goal=g;
@@ -21,6 +22,7 @@ public class GoalNode {
 		ANDtype=false;
 		ORtype=false;
 		id="goal"+i;
+		depth=0;
 	}
 	
 	public Goal getGoal() {
@@ -48,6 +50,7 @@ public class GoalNode {
 		parent=gn;
 	}
 	
+	
 	public void removeParentNode(GoalNode gn) {
 		parent=null;
 	}
@@ -72,6 +75,10 @@ public class GoalNode {
 	
 	public Goal getParentGoal() {
 		return parent.getGoal();
+	}
+	
+	public GoalNode getParentGoalNode() {
+		return parent;
 	}
 	
 	public void removeChildNode(GoalNode gn) {
@@ -131,15 +138,20 @@ public class GoalNode {
 		return d;
 	}
 	
-	public int computeDepth() {
+	public int computeDepth(int tempdepth) {
+		depth=tempdepth;
 		int d=0;
 		for (GoalNode c:children) {
-			int dc=c.computeDepth();
+			int dc=c.computeDepth(tempdepth+1);
 			if (d<dc) {
 				d=dc;
 			}
 		}
 		return d+1;
+	}
+	
+	public int getDepth() {
+		return depth;
 	}
 	
 	public int countEdges() {
@@ -158,6 +170,38 @@ public class GoalNode {
 		}
 		return true;
 	}
+	
+	public void fixCompositeTypes(GoalNetwork nw) {
+		if (hasChild()) {
+			if (!isOR()&&(!isAND())) {
+				int compl=0;
+				int excl=0;
+				Set<Goal> children=getChildGoals();
+				for (Goal g1:children){
+					for (Goal g2:children){
+						if (g1==g2) continue;
+						if (nw.isComplements(g1, g2)){
+							compl++;
+						}
+						if (nw.isExcludes(g1, g2)){
+							excl++;
+						}
+					}
+					if ((compl>0)&&(excl==0)) {
+						setAND();
+					}
+					if ((compl==0)&&(excl>0)) {
+						setAND();
+					}
+				}
+			}
+		}
+		for (GoalNode c:children) {
+			c.fixCompositeTypes(nw);
+		}
+	}
+		
+		
 	
 	public int countCompositeWithSingleChild() {
 		int count=0;
